@@ -1,163 +1,117 @@
 'use client';
 
-import { createChart, ColorType } from 'lightweight-charts';
-import { useEffect, useRef, useState } from 'react';
-import { Card } from '@tremor/react';
+import { useEffect, useRef } from 'react';
+import { createChart, ColorType, IChartApi } from 'lightweight-charts';
+import { Card, Title } from '@tremor/react';
+
+interface ChartData {
+  time: string;
+  value: number;
+}
 
 interface StockChartProps {
-  data: {
-    time: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-  }[];
+  data: ChartData[];
+  symbol: string;
+  companyName?: string;
 }
 
-interface CandlestickData {
-  close: number;
-  open: number;
-  high: number;
-  low: number;
-  time: string;
-}
-
-const StockChart = ({ data }: StockChartProps) => {
+export default function StockChart({ data, symbol, companyName }: StockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [hoveredData, setHoveredData] = useState<{
-    price: number;
-    time: string;
-  } | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
-    if (!chartContainerRef.current || !data?.length) return;
+    if (!chartContainerRef.current || !Array.isArray(data) || data.length === 0) {
+      return;
+    }
 
     // Validate data
-    const validData = data.filter(item => 
+    const validData = data.filter(item => (
       item &&
       typeof item.time === 'string' &&
-      typeof item.open === 'number' && !isNaN(item.open) &&
-      typeof item.high === 'number' && !isNaN(item.high) &&
-      typeof item.low === 'number' && !isNaN(item.low) &&
-      typeof item.close === 'number' && !isNaN(item.close)
-    );
+      typeof item.value === 'number' &&
+      !isNaN(item.value)
+    ));
 
-    if (!validData.length) {
+    if (validData.length === 0) {
       console.error('No valid data for chart');
       return;
     }
 
+    // Create new chart
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#1E293B' },
-        textColor: '#D1D5DB',
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#d1d5db',
       },
-      width: chartContainerRef.current.clientWidth,
-      height: 500,
       grid: {
         vertLines: { color: '#334155' },
         horzLines: { color: '#334155' },
       },
-      crosshair: {
-        mode: 0,
-        vertLine: {
-          width: 1,
-          color: '#64748B',
-          style: 3,
-        },
-        horzLine: {
-          width: 1,
-          color: '#64748B',
-          style: 3,
-        },
-      },
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
     });
 
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#22C55E',
-      downColor: '#EF4444',
-      borderVisible: false,
-      wickUpColor: '#22C55E',
-      wickDownColor: '#EF4444',
+    // Create and configure the area series
+    const newSeries = chart.addAreaSeries({
+      lineColor: '#3b82f6',
+      topColor: 'rgba(59, 130, 246, 0.4)',
+      bottomColor: 'rgba(59, 130, 246, 0)',
+      lineWidth: 2,
     });
+
+    // Set up resize observer
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries[0].contentRect) {
+        chart.applyOptions({
+          width: entries[0].contentRect.width,
+        });
+      }
+    });
+
+    resizeObserver.observe(chartContainerRef.current);
+    resizeObserverRef.current = resizeObserver;
 
     try {
-      candlestickSeries.setData(validData);
+      newSeries.setData(validData);
+      chart.timeScale().fitContent();
     } catch (error) {
       console.error('Error setting chart data:', error);
-      return;
     }
 
-    // Add price scale
-    chart.priceScale('right').applyOptions({
-      borderColor: '#334155',
-      scaleMargins: {
-        top: 0.2,
-        bottom: 0.2,
-      },
-    });
+    chartRef.current = chart;
 
-    // Add time scale
-    chart.timeScale().applyOptions({
-      borderColor: '#334155',
-      timeVisible: true,
-      secondsVisible: false,
-    });
-
-    // Add hover effect
-    chart.subscribeCrosshairMove((param) => {
-      if (
-        param.time &&
-        param.point &&
-        param.seriesData.get(candlestickSeries) &&
-        chartContainerRef.current
-      ) {
-        const data = param.seriesData.get(candlestickSeries) as CandlestickData;
-        setHoveredData({
-          price: data.close,
-          time: param.time as string,
-        });
-      } else {
-        setHoveredData(null);
-      }
-    });
-
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
+    // Cleanup function
     return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
   }, [data]);
 
-  if (!data?.length) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
-      <Card className="bg-slate-800 p-4">
-        <div className="h-[500px] flex items-center justify-center text-gray-400">
-          No data available for chart
+      <Card className="mt-6 bg-slate-800 border-gray-700">
+        <Title className="text-white mb-4">
+          {companyName || symbol} Stock Price History
+        </Title>
+        <div className="h-[400px] flex items-center justify-center text-gray-400">
+          No historical data available
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-slate-800 p-4">
-      <div className="relative">
-        {hoveredData && (
-          <div className="absolute top-2 left-2 bg-slate-700 px-3 py-1 rounded-md text-sm text-white">
-            {hoveredData.time} | ${hoveredData.price.toFixed(2)}
-          </div>
-        )}
-        <div ref={chartContainerRef} className="w-full h-[500px]" />
-      </div>
+    <Card className="mt-6 bg-slate-800 border-gray-700">
+      <Title className="text-white mb-4">
+        {companyName || symbol} Stock Price History
+      </Title>
+      <div ref={chartContainerRef} className="w-full" />
     </Card>
   );
-};
-
-export default StockChart;
+}

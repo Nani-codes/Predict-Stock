@@ -3,19 +3,66 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 30, 41, 59;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
+}
+
+/* Tremor base styles */
+.tremor-base {
+  @apply text-tremor-default text-tremor-content;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--background-start-rgb));
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Override Tremor dark theme */
+.dark .tremor-background-subtle {
+  @apply bg-dark-tremor-background-subtle;
+}
+
+.dark .tremor-text-emphasis {
+  @apply text-dark-tremor-content-emphasis;
+}
+
+.dark .tremor-border {
+  @apply border-dark-tremor-border;
+}
+
+.dark .tremor-dropdown-button {
+  @apply hover:bg-dark-tremor-background-subtle;
+}
+
+.dark .tremor-dropdown-item {
+  @apply hover:bg-dark-tremor-background-subtle;
+}
+
+.dark .tremor-card {
+  @apply bg-dark-tremor-background border-dark-tremor-border shadow-dark-tremor-card;
 }

@@ -1,79 +1,77 @@
 'use client';
 
-import { Card, Text, Metric, Flex, Grid, BadgeDelta } from '@tremor/react';
+import { Card, Grid, Metric, Text, BadgeDelta, Flex } from '@tremor/react';
 
 interface StockInfoProps {
-  quote: {
+  data: {
     symbol: string;
+    shortName: string;
     price: number;
     change: number;
     changePercent: number;
-    volume: number;
-    marketCap?: number;
+    marketCap: string;
+    volume: string;
+    pe: number | null;
+    eps: number | null;
   };
 }
 
-const StockInfo = ({ quote }: StockInfoProps) => {
-  const formatNumber = (num: number) => {
-    if (!num) return '0';
-    if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-    return num.toLocaleString();
-  };
+export default function StockInfo({ data }: StockInfoProps) {
+  if (!data || typeof data.price === 'undefined') {
+    return null;
+  }
 
-  const formatPrice = (price: number) => {
-    if (!price) return '$0.00';
-    return `$${price.toFixed(2)}`;
-  };
-
-  const formatChange = (change: number, changePercent: number) => {
-    if (!change || !changePercent) return '+0.00 (0.00%)';
-    return `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+  const getDeltaType = (value: number) => {
+    if (value > 0) return 'increase';
+    if (value < 0) return 'decrease';
+    return 'unchanged';
   };
 
   return (
-    <Card className="w-full bg-slate-800 p-6">
+    <Card className="mt-6 bg-slate-800 border-gray-700">
       <div className="space-y-6">
-        <Flex alignItems="start" justifyContent="between">
+        <div>
+          <Text className="text-gray-400">Stock Price</Text>
+          <Flex
+            justifyContent="start"
+            alignItems="baseline"
+            className="space-x-3 truncate"
+          >
+            <Metric className="text-white">
+              ${(data.price || 0).toFixed(2)}
+            </Metric>
+            <BadgeDelta
+              deltaType={getDeltaType(data.change || 0)}
+              className="font-medium"
+            >
+              {(data.change || 0).toFixed(2)} ({(data.changePercent || 0).toFixed(2)}%)
+            </BadgeDelta>
+          </Flex>
+        </div>
+
+        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-6">
           <div>
-            <Text className="text-gray-400">Symbol</Text>
-            <Metric className="text-white">{quote.symbol || 'N/A'}</Metric>
+            <Text className="text-gray-400">Market Cap</Text>
+            <Text className="text-white font-medium">{data.marketCap || 'N/A'}</Text>
           </div>
-          <div className="text-right">
-            <Text className="text-gray-400">Price</Text>
-            <Metric className="text-white">{formatPrice(quote.price)}</Metric>
-          </div>
-        </Flex>
-
-        <Grid numItems={2} className="gap-4">
-          <Card className="bg-slate-700">
-            <Text className="text-gray-400">Change</Text>
-            <Flex justifyContent="start" alignItems="baseline" className="space-x-2">
-              <BadgeDelta
-                deltaType={quote.change >= 0 ? 'increase' : 'decrease'}
-                className="font-medium"
-              >
-                {formatChange(quote.change, quote.changePercent)}
-              </BadgeDelta>
-            </Flex>
-          </Card>
-
-          <Card className="bg-slate-700">
+          <div>
             <Text className="text-gray-400">Volume</Text>
-            <Metric className="text-white">{formatNumber(quote.volume)}</Metric>
-          </Card>
-
-          {quote.marketCap && (
-            <Card className="bg-slate-700">
-              <Text className="text-gray-400">Market Cap</Text>
-              <Metric className="text-white">{formatNumber(quote.marketCap)}</Metric>
-            </Card>
-          )}
+            <Text className="text-white font-medium">{data.volume || 'N/A'}</Text>
+          </div>
+          <div>
+            <Text className="text-gray-400">P/E Ratio</Text>
+            <Text className="text-white font-medium">
+              {data.pe ? data.pe.toFixed(2) : 'N/A'}
+            </Text>
+          </div>
+          <div>
+            <Text className="text-gray-400">EPS</Text>
+            <Text className="text-white font-medium">
+              {data.eps ? `$${data.eps.toFixed(2)}` : 'N/A'}
+            </Text>
+          </div>
         </Grid>
       </div>
     </Card>
   );
-};
-
-export default StockInfo;
+}

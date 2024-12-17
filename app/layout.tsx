@@ -1,22 +1,21 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "Stock Market Explorer",
-  description: "A modern stock market tracking application",
-};
+  title: 'Stock Market Explorer',
+  description: 'Track real-time stock prices and analyze market trends',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className="h-full">
+      <body className="h-full">
+        {children}
+      </body>
     </html>
-  );
+  )
 }

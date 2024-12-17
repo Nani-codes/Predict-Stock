@@ -1,106 +1,71 @@
 import { NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
 
-yahooFinance.setGlobalConfig({
-  queue: {
-    concurrency: 1,
-    timeout: 60000
-  }
-});
-
-interface HistoricalDataItem {
-  date: Date;
-  open: number | null;
-  high: number | null;
-  low: number | null;
-  close: number | null;
-  volume: number | null;
-  adjclose?: number | null;
-}
-
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get('symbol');
-
-  if (!symbol) {
-    return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
-  }
-
   try {
+    const { searchParams } = new URL(request.url);
+    const symbol = searchParams.get('symbol');
+
+    if (!symbol) {
+      return NextResponse.json(
+        { error: 'Symbol parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch quote data
+    const quote = await yahooFinance.quote(symbol);
+    if (!quote) {
+      return NextResponse.json(
+        { error: 'Stock not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch historical data
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 6);
+    startDate.setFullYear(endDate.getFullYear() - 1);
 
-    console.log('Fetching data for symbol:', symbol);
-    const [historical, quote] = await Promise.all([
-      yahooFinance.chart(symbol, {
-        period1: startDate,
-        period2: endDate,
-        interval: '1d'
-      }),
-      yahooFinance.quote(symbol)
-    ]);
+    const historical = await yahooFinance.historical(symbol, {
+      period1: startDate,
+      period2: endDate,
+      interval: '1d',
+    });
 
-    console.log('Quote data:', quote);
-
-    // Check if we have the expected data structure
-    if (!historical.quotes || !Array.isArray(historical.quotes)) {
-      console.error('Unexpected historical data structure:', historical);
-      throw new Error('Invalid historical data structure');
-    }
-
-    // Filter out any invalid data points and format the date
-    const validHistoricalData = historical.quotes
-      .filter((item: HistoricalDataItem) => {
-        const isValid = item &&
-          typeof item.open === 'number' && item.open !== null && !isNaN(item.open) &&
-          typeof item.high === 'number' && item.high !== null && !isNaN(item.high) &&
-          typeof item.low === 'number' && item.low !== null && !isNaN(item.low) &&
-          typeof item.close === 'number' && item.close !== null && !isNaN(item.close) &&
-          item.date;
-
-        if (!isValid) {
-          console.log('Invalid item:', item);
-        }
-        return isValid;
-      })
-      .map((item: HistoricalDataItem) => {
-        const dateStr = item.date.toISOString ? 
-          item.date.toISOString() : 
-          new Date(item.date).toISOString();
-        
-        return {
-          time: dateStr.split('T')[0],
-          open: item.open!,
-          high: item.high!,
-          low: item.low!,
-          close: item.close!,
-        };
-      });
-
-    if (!validHistoricalData.length) {
-      console.error('No valid data points found in:', historical.quotes);
-      throw new Error('No valid historical data points');
-    }
-
-    const response = {
-      historical: validHistoricalData,
-      quote: {
-        symbol: quote.symbol,
-        shortName: quote.shortName,
-        regularMarketPrice: quote.regularMarketPrice,
-        regularMarketChange: quote.regularMarketChange,
-        regularMarketChangePercent: quote.regularMarketChangePercent,
-        regularMarketVolume: quote.regularMarketVolume,
-        marketCap: quote.marketCap
-      }
+    // Format market cap
+    const formatNumber = (num: number) => {
+      if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
+      if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+      if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+      return num.toLocaleString();
     };
 
-    console.log('Sending response:', response);
-    return NextResponse.json(response);
+    // Transform historical data
+    const historicalData = historical.map(item => ({
+      time: item.date instanceof Date 
+        ? item.date.toISOString().split('T')[0]
+        : new Date(item.date).toISOString().split('T')[0],
+      value: Number(item.close.toFixed(2)),
+    })).filter(item => !isNaN(Date.parse(item.time)));
 
+    // Prepare response data
+    const stockData = {
+      symbol: quote.symbol,
+      shortName: quote.shortName || quote.longName || quote.symbol,
+      price: quote.regularMarketPrice,
+      change: quote.regularMarketChange,
+      changePercent: quote.regularMarketChangePercent,
+      marketCap: formatNumber(quote.marketCap || 0),
+      volume: formatNumber(quote.regularMarketVolume || 0),
+      pe: quote.trailingPE || null,
+      eps: quote.epsTrailingTwelveMonths || null,
+      historicalData,
+    };
+
+    return NextResponse.json(stockData);
   } catch (error) {
-    console.error('Error fetching stock data:', error);
+    console.error('Stock API Error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch stock data' },
       { status: 500 }

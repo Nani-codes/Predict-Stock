@@ -1,117 +1,136 @@
 'use client';
 
 import { useState } from 'react';
-import StockChart from './components/StockChart';
+import { Card, Title, Text } from '@tremor/react';
+import { FiTrendingUp, FiClock, FiSmartphone, FiDatabase } from 'react-icons/fi';
 import StockSearch from './components/StockSearch';
+import StockChart from './components/StockChart';
 import StockInfo from './components/StockInfo';
-import { Flex, Card } from '@tremor/react';
+import LoadingSkeleton from './components/LoadingSkeleton';
 
 interface StockData {
-  historical: {
+  symbol: string;
+  shortName: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: string;
+  volume: string;
+  pe: number | null;
+  eps: number | null;
+  historicalData: Array<{
     time: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-  }[];
-  quote: {
-    symbol: string;
-    shortName: string;
-    regularMarketPrice: number;
-    regularMarketChange: number;
-    regularMarketChangePercent: number;
-    regularMarketVolume: number;
-    marketCap?: number;
-  };
+    value: number;
+  }>;
 }
 
 export default function Home() {
   const [stockData, setStockData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchStockData = async (symbol: string) => {
+  const handleSearch = async (symbol: string) => {
+    setLoading(true);
+    setError(null);
+    setStockData(null);
+
     try {
-      setLoading(true);
-      setError('');
-
       const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch stock data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch stock data');
       }
-
       const data = await response.json();
-      if (!data || !data.quote) {
-        throw new Error('Invalid data received from server');
-      }
-
-      setStockData({
-        historical: data.historical || [],
-        quote: {
-          symbol: data.quote.symbol || symbol,
-          shortName: data.quote.shortName || symbol,
-          regularMarketPrice: data.quote.regularMarketPrice || 0,
-          regularMarketChange: data.quote.regularMarketChange || 0,
-          regularMarketChangePercent: data.quote.regularMarketChangePercent || 0,
-          regularMarketVolume: data.quote.regularMarketVolume || 0,
-          marketCap: data.quote.marketCap
-        }
-      });
+      setStockData(data);
     } catch (err) {
-      setError('Error fetching stock data. Please try again.');
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'Error fetching stock data. Please try again.');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const features = [
+    {
+      icon: FiTrendingUp,
+      title: 'Real-Time Data',
+      description: 'Get up-to-the-minute stock prices and market data',
+    },
+    {
+      icon: FiClock,
+      title: 'Historical Charts',
+      description: 'View detailed historical price trends and patterns',
+    },
+    {
+      icon: FiSmartphone,
+      title: 'Mobile Friendly',
+      description: 'Access your stocks on any device, anywhere',
+    },
+    {
+      icon: FiDatabase,
+      title: 'Rich Data',
+      description: 'Comprehensive financial metrics and analysis',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="space-y-8">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold">Stock Market Explorer</h1>
-            <p className="text-gray-400">Enter a stock symbol to view real-time data and historical charts</p>
-          </div>
-
-          <div className="flex justify-center">
-            <StockSearch onSearch={fetchStockData} />
-          </div>
-
-          {loading && (
-            <Card className="bg-slate-800 p-8">
-              <Flex justifyContent="center" className="h-64">
-                <div className="animate-pulse flex flex-col items-center space-y-4">
-                  <div className="w-12 h-12 border-4 border-t-blue-500 border-slate-700 rounded-full animate-spin"></div>
-                  <div className="text-gray-400">Loading stock data...</div>
-                </div>
-              </Flex>
-            </Card>
-          )}
-
-          {error && (
-            <Card className="bg-red-900/20 border border-red-500 p-4">
-              <div className="text-red-500 text-center">{error}</div>
-            </Card>
-          )}
-
-          {stockData && !loading && (
-            <div className="space-y-6">
-              <StockInfo 
-                quote={{
-                  symbol: stockData.quote.symbol,
-                  price: Number(stockData.quote.regularMarketPrice) || 0,
-                  change: Number(stockData.quote.regularMarketChange) || 0,
-                  changePercent: Number(stockData.quote.regularMarketChangePercent) || 0,
-                  volume: Number(stockData.quote.regularMarketVolume) || 0,
-                  marketCap: stockData.quote.marketCap ? Number(stockData.quote.marketCap) : undefined
-                }} 
-              />
-              <StockChart data={stockData.historical} />
-            </div>
-          )}
+    <main className="min-h-screen p-4 sm:p-10 bg-gradient-to-b from-slate-900 to-slate-800">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <Title className="text-4xl sm:text-5xl font-bold text-white">
+            Stock Market Explorer
+          </Title>
+          <Text className="text-xl text-gray-400">
+            Track real-time stock prices and analyze market trends
+          </Text>
         </div>
+
+        {/* Search */}
+        <StockSearch onSearch={handleSearch} />
+
+        {/* Features Grid */}
+        {!loading && !stockData && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            {features.map((feature, index) => (
+              <Card
+                key={index}
+                className="bg-slate-800 border-gray-700 hover:bg-slate-700 transition-colors"
+              >
+                <div className="flex flex-col items-center text-center p-4 space-y-2">
+                  <feature.icon className="w-8 h-8 text-blue-500" />
+                  <Text className="text-lg font-medium text-white">
+                    {feature.title}
+                  </Text>
+                  <Text className="text-gray-400">{feature.description}</Text>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && <LoadingSkeleton />}
+
+        {/* Error Message */}
+        {error && (
+          <Card className="bg-red-900/50 border-red-700">
+            <Text className="text-red-200">{error}</Text>
+          </Card>
+        )}
+
+        {/* Stock Data */}
+        {!loading && stockData && (
+          <div>
+            <StockInfo data={stockData} />
+            <StockChart
+              data={stockData.historicalData}
+              symbol={stockData.symbol}
+              companyName={stockData.shortName}
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
