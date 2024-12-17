@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stock Market Explorer 📈
 
-## Getting Started
+A modern, interactive stock market exploration tool built with Next.js, TypeScript, and Tailwind CSS. Get real-time stock data, view historical price charts, and analyze market trends with a beautiful, responsive interface.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Real-time Stock Data**: Get up-to-date stock prices, changes, and market statistics
+- **Interactive Charts**: View historical price data with candlestick charts
+- **Responsive Design**: Beautiful UI that works on desktop and mobile devices
+- **Type-Safe**: Built with TypeScript for better code reliability
+- **Modern Stack**: Uses Next.js 15 with App Router and Server Components
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS, Tremor Components
+- **Charts**: Lightweight Charts
+- **Data**: Yahoo Finance API
+- **Development**: ESLint, PostCSS
+
+## 📦 Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/stock-market-explorer.git
+   cd stock-market-explorer
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🎯 Usage
+
+1. Enter a stock symbol (e.g., "AAPL" for Apple Inc.) in the search bar
+2. View real-time stock information including:
+   - Current price
+   - Price change and percentage
+   - Trading volume
+   - Market capitalization
+3. Explore the interactive candlestick chart showing 6 months of historical data
+4. Hover over the chart to see detailed price information
+
+## 📊 API Reference
+
+The application uses the following API endpoints:
+
+### GET /api/stock
+Fetches stock data for a given symbol.
+
+**Query Parameters:**
+- `symbol` (required): Stock symbol (e.g., "AAPL")
+
+**Response:**
+```typescript
+{
+  historical: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  }[];
+  quote: {
+    symbol: string;
+    shortName: string;
+    regularMarketPrice: number;
+    regularMarketChange: number;
+    regularMarketChangePercent: number;
+    regularMarketVolume: number;
+    marketCap?: number;
+  };
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔧 Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The project uses various configuration files:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `next.config.ts`: Next.js configuration
+- `tailwind.config.ts`: Tailwind CSS configuration
+- `postcss.config.mjs`: PostCSS configuration
+- `eslint.config.mjs`: ESLint configuration
 
-## Learn More
+## 🧪 Development
 
-To learn more about Next.js, take a look at the following resources:
+### Running Tests
+```bash
+npm run test
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Building for Production
+```bash
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Starting Production Server
+```bash
+npm start
+```
 
-## Deploy on Vercel
+## 📱 Responsive Design
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is fully responsive and works on:
+- 📱 Mobile devices
+- 💻 Tablets
+- 🖥️ Desktop computers
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a new branch: `git checkout -b feature-name`
+3. Make your changes
+4. Push to the branch: `git push origin feature-name`
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Yahoo Finance API](https://github.com/gadicc/node-yahoo-finance2) for providing stock data
+- [Tremor](https://www.tremor.so/) for beautiful UI components
+- [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) for the charting library

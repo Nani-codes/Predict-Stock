@@ -18,14 +18,6 @@ interface HistoricalDataItem {
   adjclose?: number | null;
 }
 
-interface FormattedHistoricalDataItem {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
@@ -39,6 +31,7 @@ export async function GET(request: Request) {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 6);
 
+    console.log('Fetching data for symbol:', symbol);
     const [historical, quote] = await Promise.all([
       yahooFinance.chart(symbol, {
         period1: startDate,
@@ -47,6 +40,8 @@ export async function GET(request: Request) {
       }),
       yahooFinance.quote(symbol)
     ]);
+
+    console.log('Quote data:', quote);
 
     // Check if we have the expected data structure
     if (!historical.quotes || !Array.isArray(historical.quotes)) {
@@ -70,36 +65,40 @@ export async function GET(request: Request) {
         return isValid;
       })
       .map((item: HistoricalDataItem) => {
-        // Handle the date string format
         const dateStr = item.date.toISOString ? 
           item.date.toISOString() : 
           new Date(item.date).toISOString();
         
         return {
           time: dateStr.split('T')[0],
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
+          open: item.open!,
+          high: item.high!,
+          low: item.low!,
+          close: item.close!,
         };
-      }) as FormattedHistoricalDataItem[];
+      });
 
     if (!validHistoricalData.length) {
       console.error('No valid data points found in:', historical.quotes);
-      throw new Error('No valid historical data available');
+      throw new Error('No valid historical data points');
     }
 
-    return NextResponse.json({
+    const response = {
       historical: validHistoricalData,
       quote: {
         symbol: quote.symbol,
-        price: Number(quote.regularMarketPrice) || 0,
-        change: Number(quote.regularMarketChange) || 0,
-        changePercent: Number(quote.regularMarketChangePercent) || 0,
-        volume: Number(quote.regularMarketVolume) || 0,
-        marketCap: Number(quote.marketCap) || undefined,
+        shortName: quote.shortName,
+        regularMarketPrice: quote.regularMarketPrice,
+        regularMarketChange: quote.regularMarketChange,
+        regularMarketChangePercent: quote.regularMarketChangePercent,
+        regularMarketVolume: quote.regularMarketVolume,
+        marketCap: quote.marketCap
       }
-    });
+    };
+
+    console.log('Sending response:', response);
+    return NextResponse.json(response);
+
   } catch (error) {
     console.error('Error fetching stock data:', error);
     return NextResponse.json(

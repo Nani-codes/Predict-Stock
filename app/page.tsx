@@ -41,7 +41,22 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setStockData(data);
+      if (!data || !data.quote) {
+        throw new Error('Invalid data received from server');
+      }
+
+      setStockData({
+        historical: data.historical || [],
+        quote: {
+          symbol: data.quote.symbol || symbol,
+          shortName: data.quote.shortName || symbol,
+          regularMarketPrice: data.quote.regularMarketPrice || 0,
+          regularMarketChange: data.quote.regularMarketChange || 0,
+          regularMarketChangePercent: data.quote.regularMarketChangePercent || 0,
+          regularMarketVolume: data.quote.regularMarketVolume || 0,
+          marketCap: data.quote.marketCap
+        }
+      });
     } catch (err) {
       setError('Error fetching stock data. Please try again.');
       console.error(err);
@@ -85,11 +100,11 @@ export default function Home() {
               <StockInfo 
                 quote={{
                   symbol: stockData.quote.symbol,
-                  price: stockData.quote.regularMarketPrice,
-                  change: stockData.quote.regularMarketChange,
-                  changePercent: stockData.quote.regularMarketChangePercent,
-                  volume: stockData.quote.regularMarketVolume,
-                  marketCap: stockData.quote.marketCap
+                  price: Number(stockData.quote.regularMarketPrice) || 0,
+                  change: Number(stockData.quote.regularMarketChange) || 0,
+                  changePercent: Number(stockData.quote.regularMarketChangePercent) || 0,
+                  volume: Number(stockData.quote.regularMarketVolume) || 0,
+                  marketCap: stockData.quote.marketCap ? Number(stockData.quote.marketCap) : undefined
                 }} 
               />
               <StockChart data={stockData.historical} />

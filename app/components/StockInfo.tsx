@@ -15,10 +15,21 @@ interface StockInfoProps {
 
 const StockInfo = ({ quote }: StockInfoProps) => {
   const formatNumber = (num: number) => {
+    if (!num) return '0';
     if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
     if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
     return num.toLocaleString();
+  };
+
+  const formatPrice = (price: number) => {
+    if (!price) return '$0.00';
+    return `$${price.toFixed(2)}`;
+  };
+
+  const formatChange = (change: number, changePercent: number) => {
+    if (!change || !changePercent) return '+0.00 (0.00%)';
+    return `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent.toFixed(2)}%)`;
   };
 
   return (
@@ -27,11 +38,11 @@ const StockInfo = ({ quote }: StockInfoProps) => {
         <Flex alignItems="start" justifyContent="between">
           <div>
             <Text className="text-gray-400">Symbol</Text>
-            <Metric className="text-white">{quote.symbol}</Metric>
+            <Metric className="text-white">{quote.symbol || 'N/A'}</Metric>
           </div>
           <div className="text-right">
             <Text className="text-gray-400">Price</Text>
-            <Metric className="text-white">${quote.price.toFixed(2)}</Metric>
+            <Metric className="text-white">{formatPrice(quote.price)}</Metric>
           </div>
         </Flex>
 
@@ -39,14 +50,11 @@ const StockInfo = ({ quote }: StockInfoProps) => {
           <Card className="bg-slate-700">
             <Text className="text-gray-400">Change</Text>
             <Flex justifyContent="start" alignItems="baseline" className="space-x-2">
-              <Metric className={quote.change >= 0 ? 'text-green-500' : 'text-red-500'}>
-                ${Math.abs(quote.change).toFixed(2)}
-              </Metric>
               <BadgeDelta
                 deltaType={quote.change >= 0 ? 'increase' : 'decrease'}
                 className="font-medium"
               >
-                {quote.changePercent.toFixed(2)}%
+                {formatChange(quote.change, quote.changePercent)}
               </BadgeDelta>
             </Flex>
           </Card>
