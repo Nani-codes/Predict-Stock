@@ -1,6 +1,6 @@
 'use client';
 
-import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, ColorType } from 'lightweight-charts';
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@tremor/react';
 
@@ -12,6 +12,14 @@ interface StockChartProps {
     low: number;
     close: number;
   }[];
+}
+
+interface CandlestickData {
+  close: number;
+  open: number;
+  high: number;
+  low: number;
+  time: string;
 }
 
 const StockChart = ({ data }: StockChartProps) => {
@@ -104,7 +112,7 @@ const StockChart = ({ data }: StockChartProps) => {
         param.seriesData.get(candlestickSeries) &&
         chartContainerRef.current
       ) {
-        const data = param.seriesData.get(candlestickSeries) as any;
+        const data = param.seriesData.get(candlestickSeries) as CandlestickData;
         setHoveredData({
           price: data.close,
           time: param.time as string,

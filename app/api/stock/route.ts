@@ -8,6 +8,24 @@ yahooFinance.setGlobalConfig({
   }
 });
 
+interface HistoricalDataItem {
+  date: Date;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+  adjclose?: number | null;
+}
+
+interface FormattedHistoricalDataItem {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
@@ -38,20 +56,20 @@ export async function GET(request: Request) {
 
     // Filter out any invalid data points and format the date
     const validHistoricalData = historical.quotes
-      .filter((item: any) => {
+      .filter((item: HistoricalDataItem) => {
         const isValid = item &&
-          typeof item.open === 'number' && !isNaN(item.open) &&
-          typeof item.high === 'number' && !isNaN(item.high) &&
-          typeof item.low === 'number' && !isNaN(item.low) &&
-          typeof item.close === 'number' && !isNaN(item.close) &&
-          item.date; // Check if date exists
+          typeof item.open === 'number' && item.open !== null && !isNaN(item.open) &&
+          typeof item.high === 'number' && item.high !== null && !isNaN(item.high) &&
+          typeof item.low === 'number' && item.low !== null && !isNaN(item.low) &&
+          typeof item.close === 'number' && item.close !== null && !isNaN(item.close) &&
+          item.date;
 
         if (!isValid) {
           console.log('Invalid item:', item);
         }
         return isValid;
       })
-      .map((item: any) => {
+      .map((item: HistoricalDataItem) => {
         // Handle the date string format
         const dateStr = item.date.toISOString ? 
           item.date.toISOString() : 
@@ -64,7 +82,7 @@ export async function GET(request: Request) {
           low: item.low,
           close: item.close,
         };
-      });
+      }) as FormattedHistoricalDataItem[];
 
     if (!validHistoricalData.length) {
       console.error('No valid data points found in:', historical.quotes);

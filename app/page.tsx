@@ -6,8 +6,27 @@ import StockSearch from './components/StockSearch';
 import StockInfo from './components/StockInfo';
 import { Flex, Card } from '@tremor/react';
 
+interface StockData {
+  historical: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  }[];
+  quote: {
+    symbol: string;
+    shortName: string;
+    regularMarketPrice: number;
+    regularMarketChange: number;
+    regularMarketChangePercent: number;
+    regularMarketVolume: number;
+    marketCap?: number;
+  };
+}
+
 export default function Home() {
-  const [stockData, setStockData] = useState<any>(null);
+  const [stockData, setStockData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -63,7 +82,16 @@ export default function Home() {
 
           {stockData && !loading && (
             <div className="space-y-6">
-              <StockInfo quote={stockData.quote} />
+              <StockInfo 
+                quote={{
+                  symbol: stockData.quote.symbol,
+                  price: stockData.quote.regularMarketPrice,
+                  change: stockData.quote.regularMarketChange,
+                  changePercent: stockData.quote.regularMarketChangePercent,
+                  volume: stockData.quote.regularMarketVolume,
+                  marketCap: stockData.quote.marketCap
+                }} 
+              />
               <StockChart data={stockData.historical} />
             </div>
           )}
